@@ -1,0 +1,5 @@
+#Just a test config
+set system root-authentication plain-text-password
+set system services ssh
+set system root-authentication ssh-login-allow
+set system hostname LAB

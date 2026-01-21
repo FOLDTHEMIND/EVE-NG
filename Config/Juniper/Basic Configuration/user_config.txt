@@ -1,0 +1,4 @@
+set system login user jbond class super-user
+set system login user jbond full-name "James Bond"
+set system login user jbond uid 2000
+set system login user jbond authentication plain-text-password

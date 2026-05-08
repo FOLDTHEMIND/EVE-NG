@@ -1,16 +1,21 @@
-set system host-name hostname
+set system host-name Leaf2
 set system services ssh root-login allow
 set system domain-name mynetwork.com
 delete chassis auto-image-upgrade
 set system root-authentication plain-text-password
 
 set vlans Management vlan-id 123
-set interfaces irb.123 family inet address 172.16.123.xxx/24
+set interfaces irb.123 family inet address 172.16.123.2/24
 set vlans Management l3-interface irb.123
 
 set chassis aggregated-devices ethernet device-count 1
-set interfaces ge-0/0/x ether-options 802.3ad ae1
-set interfaces ge-0/0/x ether-options 802.3ad ae1
+set interfaces ge-0/0/0 ether-options 802.3ad ae1
+set interfaces ge-0/0/1 ether-options 802.3ad ae1
 set interfaces ae1 unit 0 family ethernet-switching interface-mode trunk
 set interfaces ae1 vlan-tagging
 set interfaces ae1 unit 0 family ethernet-switching vlan members 123
+
+set routing-options static route 0.0.0.0/0 next-hop 172.16.123.1
+
+set protocols rstp interface all
+set protocols rstp bridge-priority 8k

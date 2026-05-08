@@ -1,5 +1,16 @@
-set system host-name router1
-set system root-authentication plain-text-password
+set system host-name hostname
 set system services ssh root-login allow
 set system domain-name mynetwork.com
-set interfaces fxp0 unit 0 family inet address 192.168.0.1/24
+delete chassis auto-image-upgrade
+set system root-authentication plain-text-password
+
+set vlans Management vlan-id 123
+set interfaces irb.123 family inet address 172.16.123.xxx/24
+set vlans Management l3-interface irb.123
+
+set chassis aggregated-devices ethernet device-count 1
+set interfaces ge-0/0/x ether-options 802.3ad ae1
+set interfaces ge-0/0/x ether-options 802.3ad ae1
+set interfaces ae1 unit 0 family ethernet-switching interface-mode trunk
+set interfaces ae1 vlan-tagging
+set interfaces ae1 unit 0 family ethernet-switching vlan members 123

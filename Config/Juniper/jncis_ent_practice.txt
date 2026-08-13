@@ -1,0 +1,108 @@
+Basic Settings
+set system host-name Router1
+set system services ssh root-login allow
+set system domain-name mynetwork.com
+delete chassis auto-image-upgrade
+set system root-authentication plain-text-password
+
+Management VLAN & SVI
+set vlans Management vlan-id 123
+set interfaces irb.123 family inet address 172.16.123.xxx/24
+set vlans Management l3-interface irb.123
+
+LAG/Trunk
+set chassis aggregated-devices ethernet device-count 1
+set interfaces ge-0/0/x ether-options 802.3ad ae1
+set interfaces ge-0/0/x ether-options 802.3ad ae1
+set interfaces ae1 unit 0 family ethernet-switching interface-mode trunk
+set interfaces ae1 vlan-tagging
+set interfaces ae1 unit 0 family ethernet-switching vlan members 123
+
+Default route to leaves (for buildings)
+set routing-options static route 0.0.0.0/0 next-hop 172.16.123.xxx
+
+RSTP Config (change root bridges to 4k priority)
+set protocols rstp interface all
+set protocols rstp bridge-priority 8k
+
+Access Ports & Building VLANs
+set vlans Buildingxxx vlan-id xxx
+set interfaces ae1 unit 0 family ethernet-switching vlan members [xxx 123]
+set interfaces ge-0/0/x unit 0 family ethernet-switching interface-mode access
+set interfaces ge-0/0/x unit 0 family ethernet-switching vlan members xxx
+
+SVI & Update trunk Leaves
+set vlans Buildingxxx vlan-id xxx
+set interfaces ae1 unit 0 family ethernet-switching vlan members [xxx 123]
+set interfaces irb.xxx unit 0 family inet address 172.16.xxx.1/24
+set vlans Buildingxxx l3-interface irb.xxx
+
+Port-Security
+set switch-options interface ge-0/0/x interface-mac-limit 3
+set switch-options interface ge-0/0/x interface-mac-limit packet-action shutdown
+set interfaces ge-0/0/x unit 0 family ethernet-switching recovery-timeout 180
+set switch-options interface ge-0/0/x persistent-learning
+
+Storm-control
+set forwarding-options storm-control-profiles default all bandwidth-percentage 10
+set interfaces ge-0/0/x unit 0 family ethernet-switching storm-control default
+
+BPDU Protection & Root Protection
+set protocols rstp bpdu-block-on-edge
+set protocols rstp interface ge-0/0/0 no-root-port
+
+DHCP Snooping, DAI, & IP Source Guard
+set vlans Buildingxxx forwarding-options dhcp-security
+(disabled this) set vlans Buildingxxx forwarding-options dhcp-security arp-inspection
+(disabled this) set vlans Buildingxxx forwarding-options dhcp-security ip-source-guard
+set vlans Buildingxxx forwarding-options dhcp-security group trusted interface ae1
+set vlans Buildingxxx forwarding-options dhcp-security group untrusted interface ge-0/0/x
+set vlans Buildingxxx forwarding-options dhcp-security group untrusted interface ge-0/0/x
+
+
+Introducing Spines & OSPF
+set interfaces lo0 unit 0 family inet address 10.10.10.xxx/32
+set interfaces ge-0/0/x unit 0 family inet address 10.0.255.xxx/31
+set interfaces ge-0/0/x unit 0 family inet address 10.0.255.xxx/31
+set protocols ospf area 0 interface ge-0/0/x
+set protocols ospf area 0 interface ge-0/0/x
+set protocols ospf area 0 interface lo0
+
+Inject Building subnets into OSPF
+set policy-options policy-statement Inject_Buildingxxx term Buildingxxx_Subnet from route-filter 172.16.xxx.0/24 orlonger
+set policy-options policy-statement Inject_Buildingxxx term Buildingxxx_Subnet then accept
+set protocols ospf export Inject_Buildingxxx
+
+Inject Management subnet into OSPF
+set policy-options policy-statement Inject_Management term Management_Subnet from route-filter 172.16.123.0/24 orlonger
+set policy-options policy-statement Inject_Management term Management_Subnet then accept
+set protocols ospf export Inject_Management
+
+Remove firewall features (makes the vSRX behave more like a vMX)
+delete security
+set security forwarding-options family mpls mode packet-based
+set security forwarding-options family iso mode packet-based
+set security forwarding-options family inet6 mode packet-based
+
+Set up interfaces on Router1 & Spines
+set interfaces lo0 unit 0 family inet address 10.10.10.xxx/32
+set interfaces ge-0/0/x unit 0 family inet address 10.137.255.xxx/29
+set interfaces ge-0/0/x unit 0 family inet address 10.137.255.xxx/29
+
+Establish OSPF between Spines & Router for loopback connectivity
+set protocols ospf area 0 interface lo0
+set protocols ospf area 0 interface ge-0/0/x
+
+iBGP group between Spines and Router1
+set routing-options autonomous-system 65200
+set routing-options router-id 10.10.10.13
+set protocols bgp group ibgp_65200 type internal
+set protocols bgp group ibgp_65200 local-address 10.10.10.13
+set protocols bgp group ibgp_65200 neighbor 10.10.10.14
+set protocols bgp group ibgp_65200 neighbor 10.10.10.12
+
+Route-policy to advertise routes into iBGP (on Spines)
+set policy-options policy-statement OSPF>BGP term Inject_OSPF from protocol ospf
+set policy-options policy-statement OSPF>BGP term Inject_OSPF then next-hop self
+set policy-options policy-statement OSPF>BGP term Inject_OSPF then accept
+set protocols bgp group ibgp_65200 export OSPF>BGP

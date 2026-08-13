@@ -1,0 +1,21 @@
+[Addressing]
+set interfaces lo0.0 family inet address xxx.xxx.xxx.xxx/32
+set interfaces lo0.0 family iso address 49.xxxx.xxxx.xxxx.xxxx.00
+set interfaces ge-0/0/x.0 family inet address xxx.xxx.xxx.xxx/xx
+set interfaces ge-0/0/x.0 family iso
+[IS-IS Level 1]
+set protocols isis interface lo0
+set protocols isis interface ge-0/0/x level 2 disable
+[Inject local subnet]
+set interfaces ge-0/0/x.0 family inet address xxx.xxx.xxx.xxx/24
+set policy-options policy-statement Export_Local term Local_Subnet from route-filter xxx.xxx.xxx.xxx/24 orlonger
+set policy-options policy-statement Export_Local term Local_Subnet then accept
+set protocols isis export Export_Local
+[IS-IS Level 2]
+set interfaces ge-0/0/x.0 family inet address xxx.xxx.xxx.xxx/xx
+set interfaces ge-0/0/x.0 family iso
+set protocols isis interface ge-0/0/x level 1 disable
+[Inject local subnet to L2]
+set policy-options policy-statement Export_Local term Local_Subnet from route-filter xxx.xxx.xxx.xxx/24 orlonger
+set policy-options policy-statement Export_Local term Local_Subnet then accept
+set protocols isis export Export_Local

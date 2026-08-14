@@ -1,0 +1,42 @@
+[Addressing]
+set interfaces ge-0/0/0 unit 0 family inet address xxx.xxx.xxx.xxx/xx
+set interfaces ge-0/0/1 unit 0 family inet address xxx.xxx.xxx.xxx/xx
+set interfaces lo0 unit 0 family inet address xxx.xxx.xxx.xxx/32
+
+[OSPF for loopback connectivity]
+set protocols ospf area 0.0.0.0 interface ge-0/0/x.0
+set protocols ospf area 0.0.0.0 interface ge-0/0/x.0
+set protocols ospf area 0.0.0.0 interface lo0.0
+
+[iBGP Config]
+set routing-options router-id xxx.xxx.xxx.xxx
+set routing-options autonomous-system 65400
+set protocols bgp group int_65400 type internal
+set protocols bgp group int_65400 local-address xxx.xxx.xxx.xxx
+set protocols bgp group int_65400 neighbor xxx.xxx.xxx.xxx
+set protocols bgp group int_65400 neighbor xxx.xxx.xxx.xxx
+set protocols bgp group int_65400 local-as 65400
+
+[eBGP Config]
+set routing-options router-id xxx.xxx.xxx.xxx
+set routing-options autonomous-system 65401
+set protocols bgp group int_65400 type external
+set protocols bgp group int_65400 local-address xxx.xxx.xxx.xxx
+set protocols bgp group int_65400 neighbor xxx.xxx.xxx.xxx
+set protocols bgp group int_65400 peer-as 65401
+set protocols bgp group int_65400 local-as 65400
+
+[Advertise internal subnets to eBGP peer]
+set routing-options static route xxx.xxx.xxx.xxx/28 discard
+set policy-options policy-statement EXPORT-TO-BGP term Allow_Local_Subnet from route-filter xxx.xxx.xxx.xxx/24 exact
+set policy-options policy-statement EXPORT-TO-BGP term Allow_Local_Subnet then accept
+set policy-options policy-statement EXPORT-TO-BGP term Export_Internal_Subnet from route-filter xxx.xxx.xxx.xxx/28 exact
+set policy-options policy-statement EXPORT-TO-BGP term Export_Internal_Subnet then accept
+set policy-options policy-statement EXPORT-TO-BGP then reject
+set protocols bgp group ext_xxxxx export EXPORT-TO-BGP
+
+[Set next-hop-self for ABR eBGP to iBGP advertising]
+set policy-options policy-statement NEXT_HOP_SELF term alter-next-hop from route-filter xxx.xxx.xxx.xxx/31 orlonger
+set policy-options policy-statement NEXT_HOP_SELF term alter-next-hop then next-hop self
+set policy-options policy-statement NEXT_HOP_SELF term alter-next-hop then accept
+set protocols bgp group int_xxxxx export NEXT_HOP_SELF
